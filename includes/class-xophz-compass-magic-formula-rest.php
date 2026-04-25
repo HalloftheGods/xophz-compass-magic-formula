@@ -54,6 +54,19 @@ class Xophz_Compass_Magic_Formula_REST {
                 'permission_callback' => array( $this, 'check_permission' ),
             ),
         ) );
+
+        register_rest_route( 'magic-formula/v1', '/forms/(?P<id>\d+)/fields', array(
+            array(
+                'methods'  => WP_REST_Server::READABLE,
+                'callback' => array( $this, 'get_form_fields' ),
+                'permission_callback' => array( $this, 'check_permission' ),
+            ),
+            array(
+                'methods'  => WP_REST_Server::EDITABLE,
+                'callback' => array( $this, 'update_form_fields' ),
+                'permission_callback' => array( $this, 'check_permission' ),
+            ),
+        ) );
 	}
 
     public function conjure_form( WP_REST_Request $request ) {
@@ -70,21 +83,40 @@ class Xophz_Compass_Magic_Formula_REST {
         }
 
         $wrappers = array();
+        $has_page_break = false;
+
         foreach ( $fields as $index => $field ) {
             $type = isset($field['type']) ? sanitize_text_field($field['type']) : 'text';
             $label = isset($field['label']) ? sanitize_text_field($field['label']) : 'Field ' . ($index + 1);
-            $slug = $type . '-' . ($index + 1);
+            $slug = isset($field['name']) ? sanitize_text_field($field['name']) : ( $type . '-' . ($index + 1) );
             
+            if ( $type === 'page-break' ) {
+                $has_page_break = true;
+            }
+
+            $element = array(
+                'element_id'  => $slug,
+                'type'        => $type,
+                'field_label' => $label,
+                'cols'        => 12
+            );
+
+            if ( isset($field['options']) && is_array($field['options']) ) {
+                $options = array();
+                foreach ( $field['options'] as $opt ) {
+                    $options[] = array(
+                        'label' => sanitize_text_field( $opt['label'] ?? '' ),
+                        'value' => sanitize_text_field( $opt['value'] ?? '' ),
+                        'limit' => '',
+                        'default' => false
+                    );
+                }
+                $element['options'] = $options;
+            }
+
             $wrappers[] = array(
                 'wrapper_id' => 'wrapper-' . uniqid(),
-                'fields' => array(
-                    array(
-                        'element_id'  => $slug,
-                        'type'        => $type,
-                        'field_label' => $label,
-                        'cols'        => 12
-                    )
-                )
+                'fields' => array( $element )
             );
         }
 
@@ -92,6 +124,11 @@ class Xophz_Compass_Magic_Formula_REST {
             'formName' => $name,
             'version'  => '1.0'
         );
+
+        if ( $has_page_break || count($fields) > 8 ) {
+            $settings['use_save_and_continue'] = 'true';
+            $settings['sc_email_link'] = 'true';
+        }
 
         $form_id = Forminator_API::add_form( $name, $wrappers, $settings, 'publish' );
 
@@ -261,6 +298,117 @@ class Xophz_Compass_Magic_Formula_REST {
             'entries' => $entries,
             'views'   => 0,
         );
+    }
+
+    public function get_form_fields( WP_REST_Request $request ) {
+        if ( ! class_exists( 'Forminator_API' ) ) {
+            return new WP_Error( 'no_forminator', 'Forminator API not found', array( 'status' => 500 ) );
+        }
+
+        $form_id = absint( $request->get_param( 'id' ) );
+        $wrappers = Forminator_API::get_form_wrappers( $form_id );
+
+        $fields = array();
+
+        if ( ! is_wp_error( $wrappers ) && is_array( $wrappers ) ) {
+            foreach ( $wrappers as $wrapper ) {
+                $wrapper_fields = isset( $wrapper['fields'] ) ? $wrapper['fields'] : array();
+                foreach ( $wrapper_fields as $raw ) {
+                    $element = array(
+                        'type'  => $raw['type'] ?? 'text',
+                        'label' => $raw['field_label'] ?? '',
+                        'name'  => $raw['element_id'] ?? '',
+                    );
+
+                    if ( ! empty( $raw['options'] ) && is_array( $raw['options'] ) ) {
+                        $element['options'] = array_map( function( $o ) {
+                            return array(
+                                'label' => $o['label'] ?? '',
+                                'value' => $o['value'] ?? '',
+                            );
+                        }, $raw['options'] );
+                    }
+
+                    $fields[] = $element;
+                }
+            }
+        }
+
+        $form = Forminator_API::get_form( $form_id );
+        $form_name = '';
+        if ( ! is_wp_error( $form ) && is_object( $form ) ) {
+            $form_name = $form->settings['formName'] ?? ( $form->name ?? '' );
+        }
+
+        return rest_ensure_response( array(
+            'id'     => $form_id,
+            'name'   => $form_name,
+            'fields' => $fields,
+        ) );
+    }
+
+    public function update_form_fields( WP_REST_Request $request ) {
+        if ( ! class_exists( 'Forminator_API' ) ) {
+            return new WP_Error( 'no_forminator', 'Forminator API not found', array( 'status' => 500 ) );
+        }
+
+        $form_id = absint( $request->get_param( 'id' ) );
+        $params  = $request->get_json_params() ?: $request->get_body_params();
+        $fields  = isset( $params['fields'] ) ? $params['fields'] : array();
+        $name    = isset( $params['name'] ) ? sanitize_text_field( $params['name'] ) : '';
+
+        $form = Forminator_API::get_form( $form_id );
+        if ( is_wp_error( $form ) ) {
+            return $form;
+        }
+
+        $settings = is_object( $form ) ? ( $form->settings ?? array() ) : array();
+        if ( $name ) {
+            $settings['formName'] = $name;
+        }
+
+        $wrappers = array();
+        foreach ( $fields as $index => $field ) {
+            $type  = sanitize_text_field( $field['type'] ?? 'text' );
+            $label = sanitize_text_field( $field['label'] ?? 'Field ' . ( $index + 1 ) );
+            $slug  = sanitize_text_field( $field['name'] ?? $type . '-' . ( $index + 1 ) );
+
+            $element = array(
+                'element_id'  => $slug,
+                'id'          => $slug,
+                'type'        => $type,
+                'field_label' => $label,
+                'cols'        => 12,
+            );
+
+            if ( ! empty( $field['options'] ) && is_array( $field['options'] ) ) {
+                $element['options'] = array_map( function( $o ) {
+                    return array(
+                        'label'   => sanitize_text_field( $o['label'] ?? '' ),
+                        'value'   => sanitize_text_field( $o['value'] ?? '' ),
+                        'limit'   => '',
+                        'default' => false,
+                    );
+                }, $field['options'] );
+            }
+
+            $wrappers[] = array(
+                'wrapper_id' => 'wrapper-' . $slug,
+                'fields'     => array( $element ),
+            );
+        }
+
+        $status = is_object( $form ) ? ( $form->status ?? '' ) : '';
+        $result = Forminator_API::update_form( $form_id, $wrappers, $settings, $status );
+
+        if ( is_wp_error( $result ) ) {
+            return $result;
+        }
+
+        return rest_ensure_response( array(
+            'success' => true,
+            'message' => 'Form fields updated.',
+        ) );
     }
 
     private function find_questbook_contact( $email ) {
