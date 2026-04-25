@@ -315,9 +315,10 @@ class Xophz_Compass_Magic_Formula_REST {
                 $wrapper_fields = isset( $wrapper['fields'] ) ? $wrapper['fields'] : array();
                 foreach ( $wrapper_fields as $raw ) {
                     $element = array(
-                        'type'  => $raw['type'] ?? 'text',
-                        'label' => $raw['field_label'] ?? '',
-                        'name'  => $raw['element_id'] ?? '',
+                        'type'     => $raw['type'] ?? 'text',
+                        'label'    => $raw['field_label'] ?? '',
+                        'name'     => $raw['element_id'] ?? '',
+                        'required' => isset( $raw['required'] ) ? filter_var( $raw['required'], FILTER_VALIDATE_BOOLEAN ) : false,
                     );
 
                     if ( ! empty( $raw['options'] ) && is_array( $raw['options'] ) ) {
@@ -378,6 +379,7 @@ class Xophz_Compass_Magic_Formula_REST {
                 'id'          => $slug,
                 'type'        => $type,
                 'field_label' => $label,
+                'required'    => isset( $field['required'] ) && $field['required'] ? 'true' : 'false',
                 'cols'        => 12,
             );
 
