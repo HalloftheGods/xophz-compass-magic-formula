@@ -67,7 +67,30 @@ class Xophz_Compass_Magic_Formula_REST {
                 'permission_callback' => array( $this, 'check_permission' ),
             ),
         ) );
+
+        register_rest_route( 'magic-formula/v1', '/roles', array(
+            array(
+                'methods'  => WP_REST_Server::READABLE,
+                'callback' => array( $this, 'get_roles' ),
+                'permission_callback' => array( $this, 'check_permission' ),
+            ),
+        ) );
 	}
+
+    public function get_roles( WP_REST_Request $request ) {
+        if ( ! function_exists( 'wp_roles' ) ) {
+            require_once ABSPATH . 'wp-includes/capabilities.php';
+        }
+        $wp_roles = wp_roles();
+        $roles_list = array();
+        foreach ( $wp_roles->roles as $slug => $role_data ) {
+            $roles_list[] = array(
+                'slug' => $slug,
+                'name' => $role_data['name']
+            );
+        }
+        return rest_ensure_response( $roles_list );
+    }
 
     public function conjure_form( WP_REST_Request $request ) {
         if ( ! class_exists( 'Forminator_API' ) ) {

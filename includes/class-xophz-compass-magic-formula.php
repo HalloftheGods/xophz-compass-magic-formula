@@ -189,8 +189,11 @@ class Xophz_Compass_Magic_Formula {
 		$this->loader->add_filter( 'xophz_register_sparks', $plugin_public, 'register_spark' );
 		$this->loader->add_filter( 'xophz_get_spark_manifest', $plugin_public, 'get_spark_manifest', 10, 2 );
 
-		// $this->loader->add_action( 'wp_enqueue_scripts', $plugin_public, 'enqueue_styles' );
-		// $this->loader->add_action( 'wp_enqueue_scripts', $plugin_public, 'enqueue_scripts' );
+		// Register the magic gate shortcode
+		add_shortcode( 'magic_gate_formula', array( $plugin_public, 'render_magic_gate_formula' ) );
+
+		// Hook the form preview renderer
+		$this->loader->add_action( 'template_redirect', $plugin_public, 'render_magic_preview' );
 
 	}
 

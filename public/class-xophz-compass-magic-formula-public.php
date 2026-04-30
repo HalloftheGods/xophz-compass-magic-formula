@@ -170,4 +170,102 @@ class Xophz_Compass_Magic_Formula_Public {
 			)
 		);
 	}
+
+	/**
+	 * Renders a clean preview iframe for the Magic Formula UI builder.
+	 */
+	public function render_magic_preview() {
+		if ( isset( $_GET['magic_preview_form'] ) && current_user_can( 'manage_options' ) ) {
+			$form_id = intval( $_GET['magic_preview_form'] );
+			if ( $form_id ) {
+				add_filter('show_admin_bar', '__return_false');
+				echo '<!DOCTYPE html><html><head><meta charset="utf-8">';
+				wp_head();
+				echo '<style>
+					body, html { background: transparent !important; }
+					body { padding: 20px; overflow-x: hidden; }
+					#wpadminbar { display: none !important; }
+				</style>';
+				echo '</head><body class="magic-preview-body">';
+				echo do_shortcode( '[forminator_form id="' . $form_id . '"]' );
+				wp_footer();
+				echo '</body></html>';
+				exit;
+			}
+		}
+	}
+
+	/**
+	 * Renders the Magic Gate Formula shortcode.
+	 * Allows gating Forminator forms based on user authentication and roles.
+	 *
+	 * @since 1.0.0
+	 * @param array $atts Shortcode attributes.
+	 * @return string HTML output of the resolved form.
+	 */
+	public function render_magic_gate_formula( $atts ) {
+		$atts = shortcode_atts( array(
+			'default_id' => '',
+			'gated_id'   => '',
+			'access'     => '', // Comma-separated list of allowed roles
+		), $atts, 'magic_gate_formula' );
+
+		$default_id = sanitize_text_field( $atts['default_id'] );
+		$gated_id   = sanitize_text_field( $atts['gated_id'] );
+		$access_str = sanitize_text_field( $atts['access'] );
+		
+		$allowed_roles = array();
+		if ( ! empty( $access_str ) ) {
+			// Handle array-like strings e.g. "['administrator', 'editor']" or "administrator, editor"
+			$access_str = trim( $access_str, '[]\'"' );
+			$allowed_roles = array_filter( array_map( 'trim', explode( ',', str_replace( array( '"', '\'' ), '', $access_str ) ) ) );
+		}
+
+		$show_gated = false;
+		$user_id    = get_current_user_id();
+
+		if ( is_user_logged_in() ) {
+			$user = wp_get_current_user();
+			$user_roles = (array) $user->roles;
+
+			if ( empty( $allowed_roles ) ) {
+				// If no specific access roles are defined, any logged-in user passes
+				$show_gated = true;
+			} else {
+				// Check if the user has any of the allowed roles
+				foreach ( $allowed_roles as $allowed_role ) {
+					if ( in_array( $allowed_role, $user_roles, true ) ) {
+						$show_gated = true;
+						break;
+					}
+				}
+			}
+		}
+
+		/**
+		 * Filter to allow extending the gate logic.
+		 *
+		 * @param bool  $show_gated Whether to show the gated form.
+		 * @param array $atts       The shortcode attributes.
+		 * @param int   $user_id    The current user ID.
+		 */
+		$show_gated = apply_filters( 'xophz_compass_magic_gate_show_gated', $show_gated, $atts, $user_id );
+
+		$output = '';
+
+		if ( $show_gated && ! empty( $gated_id ) ) {
+			$output = do_shortcode( '[forminator_form id="' . esc_attr( $gated_id ) . '"]' );
+		} elseif ( ! empty( $default_id ) ) {
+			$output = do_shortcode( '[forminator_form id="' . esc_attr( $default_id ) . '"]' );
+		}
+
+		/**
+		 * Filter to allow modifying the final output of the gate.
+		 *
+		 * @param string $output     The final HTML output.
+		 * @param bool   $show_gated Whether the gated form is shown.
+		 * @param array  $atts       The shortcode attributes.
+		 */
+		return apply_filters( 'xophz_compass_magic_gate_output', $output, $show_gated, $atts );
+	}
 }
