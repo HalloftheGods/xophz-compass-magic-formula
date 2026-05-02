@@ -14,6 +14,7 @@
  *
  * @wordpress-plugin
  * Category:          Command Deck
+ * Group:             CRM
  * Plugin Name:       Xophz Magic Formulas
  * Description:       Proxy from YouMeOS/COMPASS to the Forminator PHP plugin.
  * Version:           26.5.1.483
