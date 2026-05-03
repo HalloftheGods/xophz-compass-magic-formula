@@ -17,7 +17,7 @@
  * Group:             CRM
  * Plugin Name:       Xophz Magic Formulas
  * Description:       Proxy from YouMeOS/COMPASS to the Forminator PHP plugin.
- * Version:           26.5.2.705
+ * Version:           26.5.3
  * Author:            Hall of the Gods, Inc.
  * Author URI:        https://hallofthegods.com		/
  * License:           GPL-2.0+
@@ -37,7 +37,7 @@ if ( ! defined( 'WPINC' ) ) {
  * Start at version 1.0.0 and use SemVer - https://semver.org
  * Rename this for your plugin and update it as you release new versions.
  */
-define( 'XOPHZ_COMPASS_MAGIC_FORMULA_VERSION', '26.5.2.705' );
+define( 'XOPHZ_COMPASS_MAGIC_FORMULA_VERSION', '26.5.3' );
 
 /**
  * The core plugin class that is used to define internationalization,
