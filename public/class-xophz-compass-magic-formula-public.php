@@ -339,17 +339,6 @@ class Xophz_Compass_Magic_Formula_Public {
 
 		$output .= '</div>';
 
-		wp_send_json_success( array( 'html' => $output ) );
-	}
-			$output .= '</div>';
-		} elseif ( ! empty( $default_id ) ) {
-			$output .= '<div class="magic-gate-default">';
-			$output .= do_shortcode( '[forminator_form id="' . esc_attr( $default_id ) . '"]' );
-			$output .= '</div>';
-		}
-		
-		$output .= '</div>';
-
 		/**
 		 * Filter to allow modifying the final output of the gate.
 		 *
@@ -357,6 +346,8 @@ class Xophz_Compass_Magic_Formula_Public {
 		 * @param bool   $show_gated Whether the gated form is shown.
 		 * @param array  $atts       The shortcode attributes.
 		 */
-		return apply_filters( 'xophz_compass_magic_gate_output', $output, $show_gated, $atts );
+		$output = apply_filters( 'xophz_compass_magic_gate_output', $output, $show_gated, $atts );
+
+		wp_send_json_success( array( 'html' => $output ) );
 	}
 }
