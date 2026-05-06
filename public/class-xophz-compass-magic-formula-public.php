@@ -204,6 +204,11 @@ class Xophz_Compass_Magic_Formula_Public {
 	 * @return string HTML output of the resolved form.
 	 */
 	public function render_magic_gate_formula( $atts ) {
+		// Prevent page caching for pages containing this shortcode
+		if ( ! defined( 'DONOTCACHEPAGE' ) ) {
+			define( 'DONOTCACHEPAGE', true );
+		}
+
 		$atts = shortcode_atts( array(
 			'default_id' => '',
 			'gated_id'   => '',
