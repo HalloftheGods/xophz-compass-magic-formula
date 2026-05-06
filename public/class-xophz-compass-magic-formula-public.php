@@ -354,6 +354,13 @@ class Xophz_Compass_Magic_Formula_Public {
 
 		$output .= '</div>';
 
+		// Capture any inline scripts Forminator enqueued during do_shortcode
+		ob_start();
+		wp_print_footer_scripts();
+		$scripts = ob_get_clean();
+
+		$output .= $scripts;
+
 		/**
 		 * Filter to allow modifying the final output of the gate.
 		 *

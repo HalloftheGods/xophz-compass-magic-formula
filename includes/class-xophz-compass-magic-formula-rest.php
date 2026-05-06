@@ -167,6 +167,12 @@ class Xophz_Compass_Magic_Formula_REST {
 
         $output .= '</div>';
 
+        ob_start();
+        wp_print_footer_scripts();
+        $scripts = ob_get_clean();
+
+        $output .= $scripts;
+
         $output = apply_filters( 'xophz_compass_magic_gate_output', $output, $show_gated, $atts );
 
         return rest_ensure_response( array( 'html' => $output ) );
