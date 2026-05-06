@@ -98,6 +98,43 @@ class Xophz_Compass_Magic_Formula_Public {
 
 		wp_enqueue_script( $this->plugin_name, plugin_dir_url( __FILE__ ) . 'js/xophz-compass-magic-formula-public.js', array( 'jquery' ), $this->version, false );
 
+		// Preload nested Forminator scripts early
+		// Forminator sets in_footer=false for its scripts, so they MUST be enqueued before wp_head.
+		// If [magic_gate_formula] runs during the_content, wp_head has already fired and the scripts are lost.
+		global $post;
+		if ( is_a( $post, 'WP_Post' ) && has_shortcode( $post->post_content, 'magic_gate_formula' ) ) {
+			preg_match_all( '/' . get_shortcode_regex( array( 'magic_gate_formula' ) ) . '/s', $post->post_content, $matches, PREG_SET_ORDER );
+			foreach ( $matches as $shortcode ) {
+				if ( isset( $shortcode[3] ) ) {
+					$atts = shortcode_parse_atts( $shortcode[3] );
+					if ( is_array( $atts ) ) {
+						$gated_id   = isset( $atts['gated_id'] ) ? $atts['gated_id'] : '';
+						$default_id = isset( $atts['default_id'] ) ? $atts['default_id'] : '';
+						
+						// Instead of running do_shortcode early (which causes object cache conflicts and render_id collisions),
+						// we manually load the models and call enqueue_form_scripts().
+						if ( class_exists( 'Forminator_Base_Form_Model' ) && class_exists( 'Forminator_CForm_Front' ) ) {
+							$forminator_front = Forminator_CForm_Front::get_instance();
+							if ( ! empty( $gated_id ) ) {
+								$model = Forminator_Base_Form_Model::get_model( $gated_id );
+								if ( $model instanceof Forminator_Form_Model ) {
+									$forminator_front->model = $model;
+									$forminator_front->enqueue_form_scripts( false );
+								}
+							}
+							if ( ! empty( $default_id ) ) {
+								$model = Forminator_Base_Form_Model::get_model( $default_id );
+								if ( $model instanceof Forminator_Form_Model ) {
+									$forminator_front->model = $model;
+									$forminator_front->enqueue_form_scripts( false );
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+
 	}
 
 	/**
