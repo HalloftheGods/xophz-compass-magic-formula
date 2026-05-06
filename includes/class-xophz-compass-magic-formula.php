@@ -195,10 +195,6 @@ class Xophz_Compass_Magic_Formula {
 		// Hook the form preview renderer
 		$this->loader->add_action( 'template_redirect', $plugin_public, 'render_magic_preview' );
 
-		// Register the AJAX endpoint to render the correct form based on user state
-		$this->loader->add_action( 'wp_ajax_xophz_magic_gate_render', $plugin_public, 'ajax_render_magic_gate_formula' );
-		$this->loader->add_action( 'wp_ajax_nopriv_xophz_magic_gate_render', $plugin_public, 'ajax_render_magic_gate_formula' );
-
 	}
 
 	/**
