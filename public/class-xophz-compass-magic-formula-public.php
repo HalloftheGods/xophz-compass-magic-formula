@@ -251,13 +251,19 @@ class Xophz_Compass_Magic_Formula_Public {
 		 */
 		$show_gated = apply_filters( 'xophz_compass_magic_gate_show_gated', $show_gated, $atts, $user_id );
 
-		$output = '';
+		$output = '<div class="magic-gate-wrapper">';
 
 		if ( $show_gated && ! empty( $gated_id ) ) {
-			$output = do_shortcode( '[forminator_form id="' . esc_attr( $gated_id ) . '"]' );
+			$output .= '<div class="magic-gate-gated">';
+			$output .= do_shortcode( '[forminator_form id="' . esc_attr( $gated_id ) . '"]' );
+			$output .= '</div>';
 		} elseif ( ! empty( $default_id ) ) {
-			$output = do_shortcode( '[forminator_form id="' . esc_attr( $default_id ) . '"]' );
+			$output .= '<div class="magic-gate-default">';
+			$output .= do_shortcode( '[forminator_form id="' . esc_attr( $default_id ) . '"]' );
+			$output .= '</div>';
 		}
+		
+		$output .= '</div>';
 
 		/**
 		 * Filter to allow modifying the final output of the gate.
