@@ -1,0 +1,63 @@
+<svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <!-- Purple Circle Background -->
+  <circle cx="256" cy="256" r="240" fill="#6a2c91"/>
+  
+  <!-- Background purple bubbles -->
+  <circle cx="430" cy="150" r="45" fill="#a468d6" opacity="0.6"/>
+  <circle cx="370" cy="220" r="25" fill="#a468d6" opacity="0.5"/>
+  <circle cx="110" cy="160" r="30" fill="#a468d6" opacity="0.6"/>
+
+  <!-- Flask Group -->
+  <g transform="translate(10, 40) rotate(-20, 220, 260)">
+    
+    <!-- Flask Neck Inner/Back -->
+    <rect x="180" y="80" width="80" height="100" fill="#dcd5d1"/>
+    <rect x="180" y="80" width="40" height="100" fill="#c4bcb7"/>
+    
+    <!-- Cork Base -->
+    <rect x="190" y="20" width="60" height="40" fill="#a7674c"/>
+    <rect x="190" y="20" width="30" height="40" fill="#8a533b"/> 
+    
+    <!-- Cork Top -->
+    <rect x="180" y="0" width="80" height="25" rx="8" fill="#cf896b"/>
+    <rect x="180" y="0" width="40" height="25" rx="8" fill="#b07054"/> 
+    
+    <!-- Flask Body Dark Green -->
+    <circle cx="220" cy="260" r="140" fill="#3ab57b"/>
+    
+    <!-- Flask Body Light Green Overlay -->
+    <path d="M 220 120 A 140 140 0 0 1 220 400 A 90 140 0 0 0 220 120 Z" fill="#a8e268"/>
+    
+    <!-- Bubbles inside flask -->
+    <circle cx="150" cy="330" r="22" fill="#84d65d"/>
+    <circle cx="290" cy="240" r="20" fill="#c0f187"/>
+    <circle cx="230" cy="160" r="10" fill="#c0f187"/>
+    <circle cx="120" cy="250" r="16" fill="#00a374"/>
+    <circle cx="210" cy="290" r="20" fill="#00a374"/>
+    <circle cx="280" cy="340" r="14" fill="#00a374"/>
+
+    <!-- Neck Front Rim -->
+    <rect x="170" y="60" width="100" height="20" rx="10" fill="#ebe5e6"/>
+    <rect x="170" y="60" width="50" height="20" rx="10" fill="#d4ccce"/>
+  </g>
+
+  <!-- Mortar Inner Back (Inside the bowl) -->
+  <g transform="translate(-10, 30)">
+    <path d="M 220 340 Q 350 270 480 340 L 220 340 Z" fill="#b8b1ab"/>
+  </g>
+
+  <!-- Pestle -->
+  <g transform="translate(30, 60) rotate(35, 380, 240)">
+    <rect x="360" y="160" width="40" height="160" rx="20" fill="#d3ccc7"/>
+    <rect x="360" y="160" width="20" height="160" rx="20" fill="#bcbaaf"/>
+    <circle cx="380" cy="160" r="30" fill="#e8e2dd"/>
+    <path d="M 380 130 A 30 30 0 0 0 380 190 A 20 30 0 0 1 380 130 Z" fill="#c6c0ba"/>
+  </g>
+
+  <!-- Mortar Front Base -->
+  <g transform="translate(-10, 30)">
+    <path d="M 220 340 C 220 500 480 500 480 340 Q 350 400 220 340 Z" fill="#e0dcd9"/>
+    <path d="M 220 340 C 220 500 350 500 350 410 Q 285 375 220 340 Z" fill="#c4bcb6"/>
+    <path d="M 210 340 Q 350 410 490 340 Q 350 370 210 340 Z" fill="#f2edea"/>
+  </g>
+</svg>

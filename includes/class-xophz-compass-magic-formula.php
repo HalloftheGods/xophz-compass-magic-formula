@@ -195,6 +195,10 @@ class Xophz_Compass_Magic_Formula {
 		// Hook the form preview renderer
 		$this->loader->add_action( 'template_redirect', $plugin_public, 'render_magic_preview' );
 
+		// Register the lightweight AJAX endpoint to check role access
+		$this->loader->add_action( 'wp_ajax_xophz_magic_gate_check_access', $plugin_public, 'ajax_check_magic_gate_access' );
+		$this->loader->add_action( 'wp_ajax_nopriv_xophz_magic_gate_check_access', $plugin_public, 'ajax_check_magic_gate_access' );
+
 	}
 
 	/**

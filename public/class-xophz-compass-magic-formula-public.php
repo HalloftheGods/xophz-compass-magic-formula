@@ -256,6 +256,64 @@ class Xophz_Compass_Magic_Formula_Public {
 		$gated_id   = sanitize_text_field( $atts['gated_id'] );
 		$access_str = sanitize_text_field( $atts['access'] );
 		
+		$container_id = 'magic-gate-' . uniqid();
+
+		// Output BOTH forms but hide them initially. We will use a lightweight AJAX call to determine which to show.
+		// This delegates all complex rendering and form initialization entirely to Forminator!
+		ob_start();
+		?>
+		<div id="<?php echo esc_attr( $container_id ); ?>" class="magic-gate-wrapper">
+			
+			<div class="magic-gate-loader" style="min-height: 100px; display: flex; justify-content: center; align-items: center;">
+				<div class="xophz-spinner" style="width: 40px; height: 40px; border: 3px solid rgba(0,0,0,0.1); border-radius: 50%; border-top-color: #62c9ff; animation: magic-spin 1s ease-in-out infinite;"></div>
+			</div>
+
+			<div class="magic-gate-gated" style="display: none;">
+				<?php if ( ! empty( $gated_id ) ) echo do_shortcode( '[forminator_form id="' . esc_attr( $gated_id ) . '"]' ); ?>
+			</div>
+
+			<div class="magic-gate-default" style="display: none;">
+				<?php if ( ! empty( $default_id ) ) echo do_shortcode( '[forminator_form id="' . esc_attr( $default_id ) . '"]' ); ?>
+			</div>
+
+		</div>
+		<style>@keyframes magic-spin { to { transform: rotate(360deg); } }</style>
+		<script>
+		document.addEventListener('DOMContentLoaded', function() {
+			if ( typeof jQuery !== 'undefined' ) {
+				jQuery.post( '<?php echo esc_url( admin_url( 'admin-ajax.php' ) ); ?>', {
+					action: 'xophz_magic_gate_check_access',
+					access: '<?php echo esc_js( $access_str ); ?>',
+					_ajax_nonce: '<?php echo wp_create_nonce( 'xophz_magic_gate_nonce' ); ?>'
+				}, function( response ) {
+					jQuery('#<?php echo esc_js( $container_id ); ?> .magic-gate-loader').hide();
+					if ( response && response.success && response.data.show_gated ) {
+						jQuery('#<?php echo esc_js( $container_id ); ?> .magic-gate-gated').fadeIn();
+					} else {
+						jQuery('#<?php echo esc_js( $container_id ); ?> .magic-gate-default').fadeIn();
+					}
+				}).fail(function() {
+					// Fallback to default if nonce/cache fails
+					jQuery('#<?php echo esc_js( $container_id ); ?> .magic-gate-loader').hide();
+					jQuery('#<?php echo esc_js( $container_id ); ?> .magic-gate-default').fadeIn();
+				});
+			}
+		});
+		</script>
+		<?php
+		return ob_get_clean();
+	}
+
+	/**
+	 * AJAX endpoint to check if the user has access to the gated content.
+	 * Returns a simple boolean, bypassing all form rendering complexities.
+	 */
+	public function ajax_check_magic_gate_access() {
+		// Non-fatal nonce check to survive page caching
+		check_ajax_referer( 'xophz_magic_gate_nonce', false, false );
+
+		$access_str = isset( $_POST['access'] ) ? sanitize_text_field( $_POST['access'] ) : '';
+
 		$allowed_roles = array();
 		if ( ! empty( $access_str ) ) {
 			$access_str = trim( $access_str, '[]\'"' );
@@ -263,7 +321,6 @@ class Xophz_Compass_Magic_Formula_Public {
 		}
 
 		$show_gated = false;
-		$user_id    = get_current_user_id();
 
 		if ( is_user_logged_in() ) {
 			$user = wp_get_current_user();
@@ -281,23 +338,6 @@ class Xophz_Compass_Magic_Formula_Public {
 			}
 		}
 
-		$atts_filter = array( 'gated_id' => $gated_id, 'default_id' => $default_id, 'access' => $access_str );
-		$show_gated  = apply_filters( 'xophz_compass_magic_gate_show_gated', $show_gated, $atts_filter, $user_id );
-
-		$output = '<div class="magic-gate-wrapper">';
-
-		if ( $show_gated && ! empty( $gated_id ) ) {
-			$output .= '<div class="magic-gate-gated">';
-			$output .= do_shortcode( '[forminator_form id="' . esc_attr( $gated_id ) . '"]' );
-			$output .= '</div>';
-		} elseif ( ! $show_gated && ! empty( $default_id ) ) {
-			$output .= '<div class="magic-gate-default">';
-			$output .= do_shortcode( '[forminator_form id="' . esc_attr( $default_id ) . '"]' );
-			$output .= '</div>';
-		}
-
-		$output .= '</div>';
-
-		return apply_filters( 'xophz_compass_magic_gate_output', $output, $show_gated, $atts_filter );
+		wp_send_json_success( array( 'show_gated' => $show_gated ) );
 	}
 }
