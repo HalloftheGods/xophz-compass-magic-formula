@@ -75,6 +75,14 @@ class Xophz_Compass_Magic_Formula_REST {
                 'permission_callback' => array( $this, 'check_permission' ),
             ),
         ) );
+
+        register_rest_route( 'magic-formula/v1', '/gate', array(
+            array(
+                'methods'  => WP_REST_Server::CREATABLE,
+                'callback' => array( $this, 'render_magic_gate' ),
+                'permission_callback' => '__return_true',
+            ),
+        ) );
 	}
 
     public function get_roles( WP_REST_Request $request ) {
@@ -90,6 +98,78 @@ class Xophz_Compass_Magic_Formula_REST {
             );
         }
         return rest_ensure_response( $roles_list );
+    }
+
+    public function render_magic_gate( WP_REST_Request $request ) {
+        $params = $request->get_json_params() ?: $request->get_body_params();
+
+        $default_id = isset( $params['default_id'] ) ? sanitize_text_field( $params['default_id'] ) : '';
+        $gated_id   = isset( $params['gated_id'] ) ? sanitize_text_field( $params['gated_id'] ) : '';
+        $access_str = isset( $params['access'] ) ? sanitize_text_field( $params['access'] ) : '';
+
+        $allowed_roles = array();
+        if ( ! empty( $access_str ) ) {
+            $access_str = trim( $access_str, '[]\'"' );
+            $allowed_roles = array_filter( array_map( 'trim', explode( ',', str_replace( array( '"', '\'' ), '', $access_str ) ) ) );
+        }
+
+        $show_gated = false;
+        $user_id    = get_current_user_id();
+
+        if ( is_user_logged_in() ) {
+            $user = wp_get_current_user();
+            $user_roles = (array) $user->roles;
+
+            if ( empty( $allowed_roles ) ) {
+                $show_gated = true;
+            } else {
+                foreach ( $allowed_roles as $allowed_role ) {
+                    if ( in_array( $allowed_role, $user_roles, true ) ) {
+                        $show_gated = true;
+                        break;
+                    }
+                }
+            }
+        }
+
+        $atts = array( 'gated_id' => $gated_id, 'default_id' => $default_id, 'access' => $access_str );
+        $show_gated = apply_filters( 'xophz_compass_magic_gate_show_gated', $show_gated, $atts, $user_id );
+
+        $output = '<div class="magic-gate-wrapper">';
+
+        // To ensure forminator scripts render properly over REST API which runs early:
+        if ( class_exists('Forminator_CForm_Front') && class_exists('Forminator_Base_Form_Model') ) {
+            $forminator_front = Forminator_CForm_Front::get_instance();
+            if ( $show_gated && ! empty( $gated_id ) ) {
+                $model = Forminator_Base_Form_Model::get_model( $gated_id );
+                if ( $model instanceof Forminator_Form_Model ) {
+                    $forminator_front->model = $model;
+                    $forminator_front->enqueue_form_scripts( false );
+                }
+            } elseif ( ! $show_gated && ! empty( $default_id ) ) {
+                $model = Forminator_Base_Form_Model::get_model( $default_id );
+                if ( $model instanceof Forminator_Form_Model ) {
+                    $forminator_front->model = $model;
+                    $forminator_front->enqueue_form_scripts( false );
+                }
+            }
+        }
+
+        if ( $show_gated && ! empty( $gated_id ) ) {
+            $output .= '<div class="magic-gate-gated">';
+            $output .= do_shortcode( '[forminator_form id="' . esc_attr( $gated_id ) . '"]' );
+            $output .= '</div>';
+        } elseif ( ! $show_gated && ! empty( $default_id ) ) {
+            $output .= '<div class="magic-gate-default">';
+            $output .= do_shortcode( '[forminator_form id="' . esc_attr( $default_id ) . '"]' );
+            $output .= '</div>';
+        }
+
+        $output .= '</div>';
+
+        $output = apply_filters( 'xophz_compass_magic_gate_output', $output, $show_gated, $atts );
+
+        return rest_ensure_response( array( 'html' => $output ) );
     }
 
     public function conjure_form( WP_REST_Request $request ) {

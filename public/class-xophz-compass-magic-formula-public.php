@@ -277,6 +277,19 @@ class Xophz_Compass_Magic_Formula_Public {
 				}, function( response ) {
 					if ( response && response.success ) {
 						jQuery('#<?php echo esc_js( $container_id ); ?>').replaceWith( response.data.html );
+						
+						// Trigger Forminator initialization for the newly injected form
+						setTimeout(function() {
+							if ( typeof jQuery.fn.forminatorLoader !== 'undefined' ) {
+								jQuery('.forminator-custom-form[data-forminator-render="0"]').forminatorLoader();
+							}
+							if ( typeof jQuery.fn.forminatorFront !== 'undefined' ) {
+								jQuery('.forminator-custom-form').not('.forminator-front-initialized').forminatorFront();
+								jQuery('.forminator-custom-form').addClass('forminator-front-initialized');
+							}
+							// In case it relies on an event
+							jQuery(document).trigger('after.load.forminator');
+						}, 100);
 					}
 				});
 			}
@@ -290,7 +303,9 @@ class Xophz_Compass_Magic_Formula_Public {
 	 * AJAX endpoint to render the Magic Gate.
 	 */
 	public function ajax_render_magic_gate_formula() {
-		check_ajax_referer( 'xophz_magic_gate_nonce' );
+		// Do not die if the nonce fails. This is a read-only endpoint, 
+		// and aggressive page caching can serve stale nonces to logged-out users, causing 403s.
+		check_ajax_referer( 'xophz_magic_gate_nonce', false, false );
 
 		$default_id = isset( $_POST['default_id'] ) ? sanitize_text_field( $_POST['default_id'] ) : '';
 		$gated_id   = isset( $_POST['gated_id'] ) ? sanitize_text_field( $_POST['gated_id'] ) : '';
