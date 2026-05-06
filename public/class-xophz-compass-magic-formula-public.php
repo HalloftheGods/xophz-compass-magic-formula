@@ -256,9 +256,48 @@ class Xophz_Compass_Magic_Formula_Public {
 		$gated_id   = sanitize_text_field( $atts['gated_id'] );
 		$access_str = sanitize_text_field( $atts['access'] );
 		
+		$container_id = 'magic-gate-' . uniqid();
+
+		// Bypassing Object/Page Caches by rendering an empty placeholder and loading via AJAX.
+		ob_start();
+		?>
+		<div id="<?php echo esc_attr( $container_id ); ?>" class="xophz-magic-gate-loader" style="min-height: 100px; display: flex; justify-content: center; align-items: center;">
+			<div class="xophz-spinner" style="width: 40px; height: 40px; border: 3px solid rgba(0,0,0,0.1); border-radius: 50%; border-top-color: #62c9ff; animation: magic-spin 1s ease-in-out infinite;"></div>
+		</div>
+		<style>@keyframes magic-spin { to { transform: rotate(360deg); } }</style>
+		<script>
+		document.addEventListener('DOMContentLoaded', function() {
+			if ( typeof jQuery !== 'undefined' ) {
+				jQuery.post( '<?php echo esc_url( admin_url( 'admin-ajax.php' ) ); ?>', {
+					action: 'xophz_magic_gate_render',
+					gated_id: '<?php echo esc_js( $gated_id ); ?>',
+					default_id: '<?php echo esc_js( $default_id ); ?>',
+					access: '<?php echo esc_js( $access_str ); ?>',
+					_ajax_nonce: '<?php echo wp_create_nonce( 'xophz_magic_gate_nonce' ); ?>'
+				}, function( response ) {
+					if ( response && response.success ) {
+						jQuery('#<?php echo esc_js( $container_id ); ?>').replaceWith( response.data.html );
+					}
+				});
+			}
+		});
+		</script>
+		<?php
+		return ob_get_clean();
+	}
+
+	/**
+	 * AJAX endpoint to render the Magic Gate.
+	 */
+	public function ajax_render_magic_gate_formula() {
+		check_ajax_referer( 'xophz_magic_gate_nonce' );
+
+		$default_id = isset( $_POST['default_id'] ) ? sanitize_text_field( $_POST['default_id'] ) : '';
+		$gated_id   = isset( $_POST['gated_id'] ) ? sanitize_text_field( $_POST['gated_id'] ) : '';
+		$access_str = isset( $_POST['access'] ) ? sanitize_text_field( $_POST['access'] ) : '';
+
 		$allowed_roles = array();
 		if ( ! empty( $access_str ) ) {
-			// Handle array-like strings e.g. "['administrator', 'editor']" or "administrator, editor"
 			$access_str = trim( $access_str, '[]\'"' );
 			$allowed_roles = array_filter( array_map( 'trim', explode( ',', str_replace( array( '"', '\'' ), '', $access_str ) ) ) );
 		}
@@ -271,10 +310,8 @@ class Xophz_Compass_Magic_Formula_Public {
 			$user_roles = (array) $user->roles;
 
 			if ( empty( $allowed_roles ) ) {
-				// If no specific access roles are defined, any logged-in user passes
 				$show_gated = true;
 			} else {
-				// Check if the user has any of the allowed roles
 				foreach ( $allowed_roles as $allowed_role ) {
 					if ( in_array( $allowed_role, $user_roles, true ) ) {
 						$show_gated = true;
@@ -284,13 +321,8 @@ class Xophz_Compass_Magic_Formula_Public {
 			}
 		}
 
-		/**
-		 * Filter to allow extending the gate logic.
-		 *
-		 * @param bool  $show_gated Whether to show the gated form.
-		 * @param array $atts       The shortcode attributes.
-		 * @param int   $user_id    The current user ID.
-		 */
+		// Pass empty atts since we only have the raw ids now
+		$atts = array( 'gated_id' => $gated_id, 'default_id' => $default_id, 'access' => $access_str );
 		$show_gated = apply_filters( 'xophz_compass_magic_gate_show_gated', $show_gated, $atts, $user_id );
 
 		$output = '<div class="magic-gate-wrapper">';
@@ -298,6 +330,17 @@ class Xophz_Compass_Magic_Formula_Public {
 		if ( $show_gated && ! empty( $gated_id ) ) {
 			$output .= '<div class="magic-gate-gated">';
 			$output .= do_shortcode( '[forminator_form id="' . esc_attr( $gated_id ) . '"]' );
+			$output .= '</div>';
+		} elseif ( ! $show_gated && ! empty( $default_id ) ) {
+			$output .= '<div class="magic-gate-default">';
+			$output .= do_shortcode( '[forminator_form id="' . esc_attr( $default_id ) . '"]' );
+			$output .= '</div>';
+		}
+
+		$output .= '</div>';
+
+		wp_send_json_success( array( 'html' => $output ) );
+	}
 			$output .= '</div>';
 		} elseif ( ! empty( $default_id ) ) {
 			$output .= '<div class="magic-gate-default">';
