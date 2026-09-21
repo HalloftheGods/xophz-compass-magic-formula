@@ -142,7 +142,7 @@ class Xophz_Compass_Magic_Formula_Public {
 	 */
 	public function register_spark( $sparks ) {
 		$sparks['xophz-magic-formula'] = array(
-			'title'       => __( 'Magic Formulas', 'xophz-compass-magic-formula' ),
+			'title'       => __( 'Magic Formula', 'xophz-compass-magic-formula' ),
 			'description' => __( 'Forms and Data collection.', 'xophz-compass-magic-formula' ),
 			'icon'        => 'fal fa-magic',
 			'categories'  => array( 'system', 'productivity' ),
@@ -163,7 +163,7 @@ class Xophz_Compass_Magic_Formula_Public {
 		return array(
 			'id' => 'xophz-magic-formula',
 			'meta' => array(
-				'title' => 'Magic Formulas',
+				'title' => 'Magic Formula',
 				'icon' => 'fal fa-magic',
 				'dimensions' => array(
 					'width' => 900,

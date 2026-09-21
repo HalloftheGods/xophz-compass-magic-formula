@@ -13,9 +13,9 @@
  * @package           Xophz_Compass_Magic_Formula
  *
  * @wordpress-plugin
- * Category:          Command Deck
+ * Category:          Trajectory
  * Group:             CRM
- * Plugin Name:       Xophz Magic Formulas
+ * Plugin Name:       Xophz Magic Formula
  * Description:       Proxy from YouMeOS/COMPASS to the Forminator PHP plugin.
  * Version:           26.9.5
  * Author:            Hall of the Gods, Inc.
